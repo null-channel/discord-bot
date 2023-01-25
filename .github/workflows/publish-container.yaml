@@ -1,4 +1,4 @@
-name: publish_frontend
+name: publish_dockerhub
 
 on:
   push:
