@@ -1,6 +1,11 @@
 use std::env;
 mod commands;
+mod db;
+
+use db::user::{get_user_database, create_user_table};
 use commands::*;
+
+use rusqlite::{Connection, Result};
 
 use serenity::async_trait;
 use serenity::model::channel::Message;
@@ -34,11 +39,21 @@ impl EventHandler for Handler {
     }
 
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
+
+        let dbconnetion = get_user_database();
+        let connection = match dbconnetion {
+            Ok(connection) => connection,
+            Err(e) => panic!("Error opening database: {}", e),
+        };
+
+        create_user_table(&connection);
+        
         if let Interaction::ApplicationCommand(command) = interaction {
             println!("Received command interaction: {:#?}", command);
 
             let content = match command.data.name.as_str() {
                 "id" => commands::id::run(&command.data.options),
+                "anathema" => commands::anathema::run(&command.data.options,connection),
                 _ => "not implemented :(".to_string(),
             };
 
@@ -69,6 +84,7 @@ impl EventHandler for Handler {
             commands
                 .create_application_command(|command| commands::welcome::register(command))
                 .create_application_command(|command| commands::id::register(command))
+                .create_application_command(|command| commands::anathema::register(command))
         })
         .await;
 
